@@ -64,6 +64,17 @@ using Random
         @test fetch(@spawnat OTHERIDS length(localpart(DA)) == 1)
         close(DA)
     end
+
+    @testset "Inhomogenous typeof(localpart)" begin
+        block = 10
+        Y = nworkers() * block
+        X = nworkers() * block
+
+        @test_throws ErrorException DArray((X, Y)) do I
+            eltype = first(I[1]) == 1 ? Int64 : Float64
+            zeros(eltype, map(length, I))
+        end
+    end
 end
 
 check_leaks()

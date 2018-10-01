@@ -107,7 +107,14 @@ function DArray(id, init, dims, pids, idxs, cuts)
 end
 
 function construct_localparts(init, id, dims, pids, idxs, cuts; T=nothing, A=nothing)
-    localpart = isa(init, Function) ? init(idxs[localpartindex(pids)]) : fetch(init)
+    if isa(init,Function)
+        localpart = init(idxs[localpartindex(pids)]) 
+    elseif isa(init, Future)
+        fetch(init)
+    else
+        throw(ArgumentError("Initialization part must be a Function or a Future!"))
+    end
+    
     if A == nothing
         A = typeof(localpart)
     end

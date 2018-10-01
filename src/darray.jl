@@ -70,7 +70,7 @@ const SubOrDArray{T,N} = Union{DArray{T,N}, SubDArray{T,N}}
 
 localtype(::Type{DArray{T,N,S}}) where {T,N,S} = S
 localtype(::Type{SubDArray{T,N,D}}) where {T,N,D} = localtype(D)
-localtype(A::SubOrDArray) = localtype(typeof(A))
+localtype(A::SubOrDArray)   = localtype(typeof(A))
 localtype(A::AbstractArray) = typeof(A)
 
 Base.hash(d::DArray, h::UInt) = Base.hash(d.id, h)
@@ -121,10 +121,10 @@ function construct_localparts(init, id, dims, pids, idxs, cuts; T=nothing, A=not
 end
 
 function ddata(;T::Type=Any, init::Function=I->nothing, pids=workers(), data::Vector=[])
-    pids=sort(vec(pids))
-    id = next_did()
-    npids = length(pids)
-    ldata = length(data)
+    pids       = sort(vec(pids))
+    id         = next_did()
+    npids      = length(pids)
+    ldata      = length(data)
     idxs, cuts = chunk_idxs([npids], [npids])
 
     if ldata > 0
@@ -161,10 +161,10 @@ function gather(d::DArray{T,1,T}) where T
 end
 
 function DArray(init, dims, procs, dist)
-    np = prod(dist)
-    procs = reshape(procs[1:np], ntuple(i->dist[i], length(dist)))
+    np         = prod(dist)
+    procs      = reshape(procs[1:np], ntuple(i->dist[i], length(dist)))
     idxs, cuts = chunk_idxs([dims...], dist)
-    id = next_did()
+    id         = next_did()
 
     return DArray(id, init, dims, procs, idxs, cuts)
 end
@@ -187,7 +187,7 @@ function DArray(refs)
     dimdist = size(refs)
     id = next_did()
 
-    npids = [r.where for r in refs]
+    npids  = [r.where for r in refs]
     nsizes = Array{Tuple}(undef, dimdist)
     @sync for i in 1:length(refs)
         let i=i
@@ -201,7 +201,7 @@ function DArray(refs)
         subidx = CartesianIndices(dimdist)[i]
         nindices[i] = ntuple(length(subidx)) do x
             idx_in_dim = subidx[x]
-            startidx = 1
+            startidx   = 1
             for j in 1:(idx_in_dim-1)
                 prevsubidx = ntuple(y -> y == x ? j : subidx[y], length(subidx))
                 prevsize = nsizes[prevsubidx...]
@@ -256,11 +256,11 @@ chunktype(d::DArray{T,N,A}) where {T,N,A} = A
 # decide how to divide each dimension
 # returns size of chunks array
 function defaultdist(dims, pids)
-    dims = [dims...]
+    dims   = [dims...]
     chunks = ones(Int, length(dims))
-    np = length(pids)
-    f = sort!(collect(keys(factor(np))), rev=true)
-    k = 1
+    np     = length(pids)
+    f      = sort!(collect(keys(factor(np))), rev=true)
+    k      = 1
     while np > 1
         # repeatedly allocate largest factor to largest dim
         if np % f[k] != 0
@@ -274,7 +274,7 @@ function defaultdist(dims, pids)
         # resolve ties to highest dim
         dno = findlast(isequal(d), dims)
         if dims[dno] >= fac
-            dims[dno] = div(dims[dno], fac)
+            dims[dno]    = div(dims[dno], fac)
             chunks[dno] *= fac
         end
         np = div(np, fac)
@@ -294,7 +294,7 @@ end
 # compute indices array for dividing dims into chunks
 function chunk_idxs(dims, chunks)
     cuts = map(defaultdist, dims, chunks)
-    n = length(dims)
+    n    = length(dims)
     idxs = Array{NTuple{n,UnitRange{Int}}}(undef, chunks...)
     for cidx in CartesianIndices(tuple(chunks...))
         idxs[cidx.I...] = ntuple(i -> (cuts[i][cidx[i]]:cuts[i][cidx[i] + 1] - 1), n)
@@ -418,19 +418,19 @@ Base.:(==)(a::AbstractArray, d::SubDArray) = d == a
 Base.:(==)(d1::DArray, d2::DArray) = invoke(==, Tuple{DArray, AbstractArray}, d1, d2)
 function Base.:(==)(d1::SubDArray, d2::DArray)
     cd1 = copy(d1)
-    t = cd1 == d2
+    t   = cd1 == d2
     close(cd1)
     return t
 end
 function Base.:(==)(d1::DArray, d2::SubDArray)
     cd2 = copy(d2)
-    t = d1 == cd2
+    t   = d1 == cd2
     close(cd2)
     return t
 end
 function Base.:(==)(d1::SubDArray, d2::SubDArray)
     cd1 = copy(d1)
-    t = cd1 == d2
+    t   = cd1 == d2
     close(cd1)
     return t
 end
@@ -519,11 +519,11 @@ Convert a local array to distributed.
 `dist` optionally specifies a vector or tuple of the number of partitions in each dimension
 """
 function distribute(A::AbstractArray;
-    procs = workers()[1:min(nworkers(), maximum(size(A)))],
-    dist = defaultdist(size(A), procs))
-    np = prod(dist)
+    procs      = workers()[1:min(nworkers(), maximum(size(A)))],
+    dist       = defaultdist(size(A), procs))
+    np         = prod(dist)
     procs_used = procs[1:np]
-    idxs, _ = chunk_idxs([size(A)...], dist)
+    idxs, _    = chunk_idxs([size(A)...], dist)
 
     s = verified_destination_serializer(reshape(procs_used, size(idxs)), size(idxs)) do pididx
         A[idxs[pididx]...]
@@ -591,16 +591,16 @@ function Base.reshape(A::DArray{T,1,S}, d::Dims) where {T,S<:Array}
         throw(DimensionMismatch("dimensions must be consistent with array size"))
     end
     return DArray(d) do I
-        sz = map(length,I)
+        sz     = map(length,I)
         d1offs = first(I[1])
-        nd = length(I)
+        nd     = length(I)
 
-        B = Array{T}(undef, sz)
-        nr = size(B,1)
+        B      = Array{T}(undef, sz)
+        nr     = size(B,1)
         sztail = size(B)[2:end]
 
         for i=1:div(length(B),nr)
-            i2 = CartesianIndices(sztail)[i]
+            i2        = CartesianIndices(sztail)[i]
             globalidx = [ I[j][i2[j-1]] for j=2:nd ]
 
             a = LinearIndices(d)[d1offs, globalidx...]
@@ -618,10 +618,10 @@ _scalarindexingallowed() = _allowscalar[] || throw(ErrorException("scalar indexi
 
 getlocalindex(d::DArray, idx...) = localpart(d)[idx...]
 function getindex_tuple(d::DArray{T}, I::Tuple{Vararg{Int}}) where T
-    chidx = locate(d, I...)
-    idxs = d.indices[chidx...]
+    chidx    = locate(d, I...)
+    idxs     = d.indices[chidx...]
     localidx = ntuple(i -> (I[i] - first(idxs[i]) + 1), ndims(d))
-    pid = d.pids[chidx...]
+    pid      = d.pids[chidx...]
     return remotecall_fetch(getlocalindex, pid, d, localidx...)::T
 end
 
@@ -793,7 +793,7 @@ function Base.setindex!(a::Array, s::SubDArray,
     J = Base.to_indices(d, s.indices)
     @sync for i = 1:length(d.pids)
         K_c = d.indices[i]
-        K = map(intersect, J, K_c)
+        K   = map(intersect, J, K_c)
         if !any(isempty, K)
             K_mask = map(indexin_mask, J, K_c)
             idxs = restrict_indices(Inew, K_mask)

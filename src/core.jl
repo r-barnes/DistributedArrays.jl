@@ -1,5 +1,5 @@
-const registry=Dict{Tuple, Any}()
-const refs=Set()  # Collection of darray identities created on this node
+const registry = Dict{Tuple, Any}()
+const refs     = Set()  # Collection of darray identities created on this node
 
 let DID::Int = 1
     global next_did
@@ -14,7 +14,7 @@ Produces an incrementing ID that will be used for DArrays.
 next_did
 
 release_localpart(id::Tuple) = (delete!(registry, id); nothing)
-release_localpart(d) = release_localpart(d.id)
+release_localpart(d)         = release_localpart(d.id)
 
 function close_by_id(id, pids)
 #   @async println("Finalizer for : ", id)

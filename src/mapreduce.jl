@@ -50,10 +50,10 @@ Base.reducedim_initarray(A::DArray, region, v0::T) where {T} = Base.reducedim_in
 
 # Compute mapreducedim of each localpart and store the result in a new DArray
 function mapreducedim_within(f, op, A::DArray, region)
-    arraysize = [size(A)...]
-    gridsize = [size(A.indices)...]
+    arraysize              = [size(A)...]
+    gridsize               = [size(A.indices)...]
     arraysize[[region...]] = gridsize[[region...]]
-    indx = similar(A.indices)
+    indx                   = similar(A.indices)
 
     for i in CartesianIndices(indx)
         indx[i] = ntuple(j -> j in region ? (i.I[j]:i.I[j]) : A.indices[i][j], ndims(A))
@@ -69,9 +69,9 @@ end
 function mapreducedim_between!(f, op, R::DArray, A::DArray, region)
     asyncmap(procs(R)) do p
         remotecall_fetch(p, f, op, R, A, region) do f, op, R, A, region
-            localind = [r for r = localindices(A)]
+            localind              = [r for r = localindices(A)]
             localind[[region...]] = [1:n for n = size(A)[[region...]]]
-            B = convert(Array, A[localind...])
+            B                     = convert(Array, A[localind...])
             Base.mapreducedim!(f, op, localpart(R), B)
             nothing
         end
@@ -239,12 +239,12 @@ function _ppeval(f, A...; dim = map(ndims, A))
             push!(args, A[i])
         end
     end
-    R1 = f(args...)
+    R1   = f(args...)
     ridx = Any[1:size(R1, d) for d in 1:ndims(R1)]
     push!(ridx, 1)
-    Rsize = map(last, ridx)
+    Rsize      = map(last, ridx)
     Rsize[end] = dimlength
-    R = Array{eltype(R1)}(undef, Rsize...)
+    R          = Array{eltype(R1)}(undef, Rsize...)
 
     for i = 1:dimlength
         for j = 1:narg
@@ -255,7 +255,7 @@ function _ppeval(f, A...; dim = map(ndims, A))
                 args[j] = A[j]
             end
         end
-        ridx[end] = i
+        ridx[end]  = i
         R[ridx...] = f(args...)
     end
 

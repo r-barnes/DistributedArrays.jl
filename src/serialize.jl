@@ -15,28 +15,28 @@ function Serialization.serialize(S::AbstractSerializer, d::DArray{T,N,A}) where 
 end
 
 function Serialization.deserialize(S::AbstractSerializer, t::Type{DT}) where DT<:DArray
-    what = deserialize(S)
+    what    = deserialize(S)
     id_only = what[1]
-    id = what[2]
+    id      = what[2]
 
     if id_only
         d = d_from_weakref_or_d(id)
         if d === nothing
             # access to fields will throw an error, at least the deserialization process will not
             # result in worker death
-            d = DT()
+            d    = DT()
             d.id = id
         end
         return d
     else
         # We are not a participating worker, deser fields and instantiate locally.
-        dims = deserialize(S)
-        pids = deserialize(S)
+        dims    = deserialize(S)
+        pids    = deserialize(S)
         indices = deserialize(S)
-        cuts = deserialize(S)
-        A = deserialize(S)
-        T=eltype(DT)
-        N=length(dims)
+        cuts    = deserialize(S)
+        A       = deserialize(S)
+        T       = eltype(DT)
+        N       = length(dims)
         return DT(id, dims, pids, indices, cuts, empty_localpart(T,N,A))
     end
 end
@@ -61,7 +61,7 @@ end
 DestinationSerializer(deser_obj::Any) = DestinationSerializer(nothing, nothing, deser_obj)
 
 function Serialization.serialize(S::AbstractSerializer, s::DestinationSerializer)
-    pid = worker_id_from_socket(S.io)
+    pid    = worker_id_from_socket(S.io)
     pididx = findfirst(isequal(pid), s.pids)
     @assert pididx !== nothing
     Serialization.serialize_type(S, typeof(s))

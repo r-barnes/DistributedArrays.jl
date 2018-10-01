@@ -1,13 +1,13 @@
 # Sorting a DVector using samplesort
 
 function sample_n_setup_ref(d::DVector, sample_size; kwargs...)
-    lp = localpart(d)
-    llp = length(lp)
-    np = length(procs(d))
+    lp          = localpart(d)
+    llp         = length(lp)
+    np          = length(procs(d))
     sample_size = llp > sample_size ? sample_size : llp
-    sorted = sort(lp; kwargs...)
-    sample = sorted[collect(1:div(llp,sample_size):llp)]
-    ref = RemoteChannel(()->Channel(np+1))             # To collect parts to be sorted locally later.
+    sorted      = sort(lp; kwargs...)
+    sample      = sorted[collect(1:div(llp,sample_size):llp)]
+    ref         = RemoteChannel(()->Channel(np+1))     # To collect parts to be sorted locally later.
                                                        # First element is the locally sorted vector
     put!(ref, sorted)
     return (sample, ref)
@@ -102,7 +102,7 @@ Keyword argument `alg` takes the same options `Base.sort`
 """
 function Base.sort(d::DVector{T}; sample=true, kwargs...) where T
     pids = procs(d)
-    np = length(pids)
+    np   = length(pids)
 
     # Only `alg` and `sample` are supported as keyword arguments
     if length(filter(x->!(x in (:alg, :by)), [x[1] for x in kwargs])) > 0
@@ -111,20 +111,20 @@ function Base.sort(d::DVector{T}; sample=true, kwargs...) where T
 
     if sample==true
         boundaries, refs = compute_boundaries(d; kwargs...)
-        presorted=true
+        presorted        = true
 
     elseif sample==false
         # Assume an uniform distribution between min and max values
-        minmax=asyncmap(p->remotecall_fetch(d->(minimum(localpart(d)), maximum(localpart(d))), p, d), pids)
-        min_d = minimum(T[x[1] for x in minmax])
-        max_d = maximum(T[x[2] for x in minmax])
+        minmax = asyncmap(p->remotecall_fetch(d->(minimum(localpart(d)), maximum(localpart(d))), p, d), pids)
+        min_d  = minimum(T[x[1] for x in minmax])
+        max_d  = maximum(T[x[2] for x in minmax])
 
         return sort(d; sample=(min_d,max_d), kwargs...)
 
     elseif isa(sample, Tuple)
         # Assume an uniform distribution between min and max values in the tuple
-        lb=sample[1]
-        ub=sample[2]
+        lb = sample[1]
+        ub = sample[2]
 
         @assert lb<=ub
 
@@ -144,13 +144,13 @@ function Base.sort(d::DVector{T}; sample=true, kwargs...) where T
 
     elseif isa(sample, Array)
         # Provided array is used as a sample
-        samples = sort(copy(sample))
+        samples    = sort(copy(sample))
         samples[1] = typemin(T)
         boundaries = samples[[1+(x-1)*div(length(samples), np) for x in 1:np]]
         push!(boundaries, typemax(T))
-        presorted=false
+        presorted = false
 
-        refs=[RemoteChannel(p) for p in procs(d)]
+        refs = [RemoteChannel(p) for p in procs(d)]
     else
         throw(ArgumentError("keyword arg `sample` must be Boolean, Tuple(Min,Max) or an actual sample of data : " * string(sample)))
     end

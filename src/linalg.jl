@@ -197,8 +197,8 @@ end
 function _matmatmul!(C::DMatrix, A::DMatrix, B::AbstractMatrix, α::Number, β::Number, tA)
     # error checks
     Ad1, Ad2 = (tA == 'N') ? (1,2) : (2,1)
-    mA, nA = (size(A, Ad1), size(A, Ad2))
-    mB, nB = size(B)
+    mA, nA   = (size(A, Ad1), size(A, Ad2))
+    mB, nB   = size(B)
     if mB != nA
         throw(DimensionMismatch("matrix A has dimensions ($mA, $nA), matrix B has dimensions ($mB, $nB)"))
     end
@@ -219,7 +219,7 @@ function _matmatmul!(C::DMatrix, A::DMatrix, B::AbstractMatrix, α::Number, β::
         for k = 1:size(C.pids, 2)
             Acuts = A.cuts[Ad2]
             Ccuts = C.cuts[2]
-            Bjk = B[Acuts[j]:Acuts[j + 1] - 1, Ccuts[k]:Ccuts[k + 1] - 1]
+            Bjk   = B[Acuts[j]:Acuts[j + 1] - 1, Ccuts[k]:Ccuts[k + 1] - 1]
             for i = 1:size(A.pids, Ad1)
                 p = (tA == 'N') ? procs(A)[i,j] : procs(A)[j,i]
                 R[i,j,k] = remotecall(p) do

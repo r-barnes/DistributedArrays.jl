@@ -120,7 +120,7 @@ end
 
 function get_msg(typ_check, from_check=false, tag_check=nothing)
     ctxt_id = task_local_storage(:SPMD_CTXT)
-    chnl = get_ctxt_from_id(ctxt_id).chnl
+    chnl    = get_ctxt_from_id(ctxt_id).chnl
 
     unexpected_msgs=[]
     while true
@@ -173,7 +173,7 @@ function barrier(;pids=procs(), tag=nothing)
     end
 
     ctxt_id = task_local_storage(:SPMD_CTXT)
-    chnl = get_ctxt_from_id(ctxt_id).chnl
+    chnl    = get_ctxt_from_id(ctxt_id).chnl
     foreach(x->put!(chnl, x), unexpected_msgs)
     return nothing
 end
@@ -208,10 +208,10 @@ end
 
 function gather(x, pid::Int; tag=nothing, pids=procs())
     if myid() == pid
-        gathered_data = Array{Any}(undef, length(pids))
-        myidx = findfirst(isequal(pid), sort(pids))
+        gathered_data        = Array{Any}(undef, length(pids))
+        myidx                = findfirst(isequal(pid), sort(pids))
         gathered_data[myidx] = x
-        n = length(pids) - 1
+        n                    = length(pids) - 1
         while n > 0
             from, data_x = get_msg(:gather, false, tag)
             fromidx = findfirst(isequal(from), sort(pids))
@@ -236,7 +236,7 @@ function spmd(f, args...; pids=procs(), context=nothing)
     f_noarg = ()->f(args...)
     clear_ctxt = false
     if context == nothing
-        ctxt_id = next_did()
+        ctxt_id    = next_did()
         clear_ctxt = true    # temporary unique context created for this run.
                              # should be cleared at the end of the run.
     else
